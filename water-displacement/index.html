@@ -1,0 +1,1413 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>排水法（二）：Q6–Q8 與跟進練習</title>
+  <style>
+    :root {
+      --bg: #f7f4ef;
+      --panel: #ffffffee;
+      --ink: #2c3e50;
+      --muted: #5a6a7a;
+      --accent: #3d8bfd;
+      --accent-press: #2a6fd4;
+      --good: #2ea44f;
+      --band: #3ecf6a;
+      --band-drop: #e87a5a;
+      --warn: #e8a838;
+      --radius: 16px;
+      --shadow: 0 8px 28px rgba(44, 62, 80, 0.12);
+      --touch: 48px;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    html, body {
+      margin: 0;
+      height: 100%;
+      font-family: "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      overflow: hidden;
+    }
+
+    #app {
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      height: 100%;
+      height: 100dvh;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 14px;
+      background: linear-gradient(180deg, #fff 0%, #f7f4ef 100%);
+      border-bottom: 1px solid #e8e2d8;
+      z-index: 3;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(0.95rem, 3.2vw, 1.3rem);
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      line-height: 1.3;
+    }
+
+    #teacher-toggle {
+      flex-shrink: 0;
+      min-height: var(--touch);
+      padding: 8px 14px;
+      border: 1px solid #d4cbbd;
+      border-radius: 999px;
+      background: #fff8ee;
+      color: var(--ink);
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    #teacher-toggle:active { background: #ffe9c7; }
+
+    /* Question picker */
+    #picker {
+      display: flex;
+      gap: 8px;
+      padding: 8px 12px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      background: #fff;
+      border-bottom: 1px solid #e8e2d8;
+      z-index: 3;
+      scrollbar-width: none;
+    }
+    #picker::-webkit-scrollbar { display: none; }
+
+    .q-btn {
+      flex: 0 0 auto;
+      min-height: var(--touch);
+      padding: 8px 14px;
+      border: 2px solid #dfe6ee;
+      border-radius: 14px;
+      background: #f4f7fb;
+      color: var(--ink);
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      transition: background 0.15s, border-color 0.15s, transform 0.1s;
+    }
+    .q-btn:active { transform: scale(0.97); }
+    .q-btn.active {
+      background: #e8f1ff;
+      border-color: var(--accent);
+      color: #1a4f9c;
+      box-shadow: 0 2px 10px rgba(61, 139, 253, 0.2);
+    }
+    .q-btn .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.55em;
+      height: 1.55em;
+      border-radius: 50%;
+      background: #c5d8f5;
+      color: #1a4f9c;
+      font-size: 0.85em;
+      font-weight: 800;
+    }
+    .q-btn.active .badge { background: var(--accent); color: #fff; }
+    .q-btn .sug {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #c47a12;
+      background: #fff3d6;
+      padding: 2px 6px;
+      border-radius: 6px;
+      letter-spacing: 0.02em;
+    }
+
+    #stage-wrap {
+      position: relative;
+      min-height: 0;
+      background:
+        radial-gradient(ellipse at 50% 0%, #ffffff 0%, transparent 55%),
+        linear-gradient(180deg, #eef6ff 0%, #f7f4ef 55%, #efe8dc 100%);
+    }
+
+    #canvas-host {
+      position: absolute;
+      inset: 0;
+    }
+
+    canvas {
+      display: block;
+      width: 100% !important;
+      height: 100% !important;
+      touch-action: none;
+    }
+
+    .hud {
+      position: absolute;
+      left: 10px;
+      right: 10px;
+      top: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .chip {
+      background: var(--panel);
+      backdrop-filter: blur(8px);
+      border: 1px solid #e4ddd2;
+      border-radius: 12px;
+      padding: 7px 11px;
+      box-shadow: var(--shadow);
+      font-size: clamp(0.8rem, 2.6vw, 0.95rem);
+      line-height: 1.4;
+    }
+    .chip strong { color: var(--accent); }
+    .chip.band { border-color: #8fd9a8; background: #eafaf0ee; }
+    .chip.band.drop { border-color: #f0b0a0; background: #fff0ecee; }
+    .chip.band.drop strong { color: #c04530; }
+    .chip.formula { border-color: #9ec5ff; background: #eef5ffee; font-weight: 600; }
+
+    #stem-bar {
+      position: absolute;
+      left: 10px;
+      right: 10px;
+      bottom: 10px;
+      z-index: 1;
+      background: var(--panel);
+      backdrop-filter: blur(10px);
+      border: 1px solid #e4ddd2;
+      border-radius: 14px;
+      padding: 10px 14px;
+      box-shadow: var(--shadow);
+      font-size: clamp(0.88rem, 2.8vw, 1.05rem);
+      line-height: 1.45;
+      max-height: 38%;
+      overflow: auto;
+    }
+    #stem-bar .ask {
+      margin-top: 4px;
+      font-weight: 700;
+      color: #1a4f9c;
+    }
+
+    #controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: stretch;
+      gap: 10px;
+      padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px));
+      background: #fff;
+      border-top: 1px solid #e8e2d8;
+      z-index: 2;
+    }
+
+    .btn-main {
+      flex: 1 1 160px;
+      min-height: 56px;
+      border: none;
+      border-radius: var(--radius);
+      background: var(--accent);
+      color: #fff;
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      box-shadow: 0 6px 16px rgba(61, 139, 253, 0.35);
+    }
+    .btn-main:active { background: var(--accent-press); transform: scale(0.98); }
+    .btn-main.in { background: var(--warn); box-shadow: 0 6px 16px rgba(232, 168, 56, 0.35); }
+    .btn-main.out { background: #e87a5a; box-shadow: 0 6px 16px rgba(232, 122, 90, 0.35); }
+    .btn-main:disabled { opacity: 0.55; cursor: default; transform: none; }
+
+    .btn-secondary {
+      flex: 0 1 auto;
+      min-height: 56px;
+      padding: 0 16px;
+      border: 2px solid #c5d8f5;
+      border-radius: var(--radius);
+      background: #f4f8ff;
+      color: #1a4f9c;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-secondary:active { background: #e0ecff; }
+    .btn-secondary.on { background: #1a4f9c; color: #fff; border-color: #1a4f9c; }
+
+    .calc-panel {
+      flex: 2 1 240px;
+      background: #f4f8ff;
+      border: 1px solid #d6e6ff;
+      border-radius: var(--radius);
+      padding: 10px 14px;
+      font-size: clamp(0.85rem, 2.6vw, 1rem);
+      line-height: 1.5;
+      min-height: 56px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .calc-panel .eq {
+      margin-top: 2px;
+      font-weight: 700;
+      color: #1b5e20;
+      font-size: 1.05em;
+    }
+    .calc-panel.hidden-calc .eq,
+    .calc-panel.hidden-calc .calc-body { display: none; }
+    .calc-panel.hidden-calc .placeholder { display: block; color: var(--muted); }
+    .calc-panel .placeholder { display: none; }
+
+    .hint {
+      width: 100%;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.8rem;
+      margin: -2px 0 0;
+    }
+
+    /* Follow-up UI overlay inside controls area */
+    #follow-ui {
+      display: none;
+      width: 100%;
+      flex-direction: column;
+      gap: 10px;
+    }
+    #follow-ui.show { display: flex; }
+    #main-actions.hide { display: none !important; }
+
+    .follow-tabs {
+      display: flex;
+      gap: 8px;
+    }
+    .f-tab {
+      flex: 1;
+      min-height: 44px;
+      border: 2px solid #dfe6ee;
+      border-radius: 12px;
+      background: #f4f7fb;
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+      color: var(--ink);
+    }
+    .f-tab.active {
+      background: #e8f1ff;
+      border-color: var(--accent);
+      color: #1a4f9c;
+    }
+
+    .ball-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      background: #faf8f4;
+      border: 1px solid #e8e2d8;
+      border-radius: 14px;
+      padding: 10px 12px;
+    }
+    .ball-row .label {
+      font-weight: 700;
+      min-width: 7.5em;
+      font-size: 0.95rem;
+    }
+    .ball-swatch {
+      display: inline-block;
+      width: 1.1em;
+      height: 1.1em;
+      border-radius: 50%;
+      vertical-align: -0.15em;
+      margin-right: 4px;
+      border: 1px solid rgba(0,0,0,0.12);
+    }
+    .counter {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .counter button {
+      width: 44px;
+      height: 44px;
+      border: none;
+      border-radius: 12px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 1.4rem;
+      font-weight: 700;
+      cursor: pointer;
+      line-height: 1;
+    }
+    .counter button:active { background: var(--accent-press); }
+    .counter .val {
+      min-width: 2em;
+      text-align: center;
+      font-size: 1.25rem;
+      font-weight: 800;
+    }
+    .vol-check {
+      font-size: 0.95rem;
+      line-height: 1.45;
+      padding: 8px 10px;
+      border-radius: 12px;
+      background: #f0f4f8;
+      border: 1px solid #dce4ee;
+    }
+    .vol-check.ok {
+      background: #eafaf0;
+      border-color: #8fd9a8;
+      color: #1b5e20;
+      font-weight: 700;
+    }
+    .vol-check.bad {
+      background: #fff5f2;
+      border-color: #f0b0a0;
+    }
+
+    .follow-btns {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .follow-btns button {
+      flex: 1 1 140px;
+      min-height: 48px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+      border: 2px solid #c5d8f5;
+      background: #f4f8ff;
+      color: #1a4f9c;
+    }
+    .follow-btns button.primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    /* Teacher notes drawer */
+    #teacher-panel {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      background: rgba(30, 40, 50, 0.35);
+    }
+    #teacher-panel.open { display: flex; }
+
+    #teacher-sheet {
+      width: min(600px, 100%);
+      max-height: min(82vh, 720px);
+      overflow: auto;
+      background: #fffdf8;
+      border-radius: 20px 20px 0 0;
+      box-shadow: 0 -8px 40px rgba(0,0,0,0.18);
+      padding: 18px 18px calc(18px + env(safe-area-inset-bottom, 0px));
+    }
+    #teacher-sheet h2 { margin: 0 0 4px; font-size: 1.2rem; }
+    #teacher-sheet h3 {
+      margin: 14px 0 6px;
+      font-size: 1.02rem;
+      color: #1a4f9c;
+      border-bottom: 1px solid #e8e2d8;
+      padding-bottom: 4px;
+    }
+    #teacher-sheet p, #teacher-sheet li {
+      margin: 0 0 6px;
+      line-height: 1.55;
+      color: #334;
+      font-size: 0.95rem;
+    }
+    #teacher-sheet ul { margin: 4px 0 0; padding-left: 1.2em; }
+    #teacher-sheet .note-warn {
+      background: #fff3d6;
+      border: 1px solid #e8c878;
+      border-radius: 12px;
+      padding: 10px 12px;
+      margin: 8px 0;
+      font-size: 0.92rem;
+      line-height: 1.5;
+    }
+    #close-teacher {
+      display: block;
+      width: 100%;
+      min-height: var(--touch);
+      margin-top: 14px;
+      border: none;
+      border-radius: 12px;
+      background: #2c3e50;
+      color: #fff;
+      font-size: 1.05rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    @media (min-width: 900px) {
+      #controls { padding: 12px 24px; }
+      header { padding: 12px 24px; }
+      #picker { padding: 8px 24px; }
+      .hud { left: 20px; right: auto; max-width: 440px; }
+      #stem-bar { left: 20px; right: 20px; max-width: 720px; }
+    }
+  </style>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "./vendor/three.module.js",
+      "three/addons/": "./vendor/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>排水法（二）：Q6–Q8 與跟進</h1>
+      <button type="button" id="teacher-toggle" aria-expanded="false" aria-controls="teacher-panel">教師備註</button>
+    </header>
+
+    <nav id="picker" aria-label="題目選擇（可自由跳轉）">
+      <button type="button" class="q-btn active" data-q="q6" aria-pressed="true">
+        <span class="badge">①</span> Q6 <span class="sug">建議</span>
+      </button>
+      <button type="button" class="q-btn" data-q="q7" aria-pressed="false">
+        <span class="badge">②</span> Q7 <span class="sug">建議</span>
+      </button>
+      <button type="button" class="q-btn" data-q="q8" aria-pressed="false">
+        <span class="badge">③</span> Q8 <span class="sug">建議</span>
+      </button>
+      <button type="button" class="q-btn" data-q="follow" aria-pressed="false">
+        <span class="badge">④</span> 跟進練習簡版 <span class="sug">建議</span>
+      </button>
+    </nav>
+
+    <div id="stage-wrap">
+      <div id="canvas-host" aria-label="三維水缸示範"></div>
+      <div class="hud" aria-live="polite">
+        <div class="chip" id="chip-dims"></div>
+        <div class="chip" id="chip-level">水位：<strong id="level-text">—</strong> 厘米</div>
+        <div class="chip band" id="chip-band" hidden></div>
+        <div class="chip formula" id="chip-ask"></div>
+      </div>
+      <div id="stem-bar">
+        <div id="stem-text"></div>
+        <div class="ask" id="ask-text"></div>
+      </div>
+    </div>
+
+    <div id="controls">
+      <div id="main-actions" style="display:contents">
+        <button type="button" class="btn-main" id="action-btn">放入</button>
+        <button type="button" class="btn-secondary" id="calc-toggle" aria-pressed="false">顯示計算過程</button>
+        <div class="calc-panel hidden-calc" id="calc-panel" aria-live="polite">
+          <div class="placeholder">按「顯示計算過程」或完成放入／取出後可查看（教師可先示範再揭示）</div>
+          <div class="calc-body" id="calc-body"></div>
+          <div class="eq" id="calc-eq"></div>
+        </div>
+      </div>
+
+      <div id="follow-ui">
+        <div class="follow-tabs">
+          <button type="button" class="f-tab active" data-f="1">跟進1 · 放入混合球</button>
+          <button type="button" class="f-tab" data-f="2">跟進2 · 取出混合球</button>
+        </div>
+        <div id="follow-stem" style="font-size:0.95rem;line-height:1.45"></div>
+        <div class="ball-row" id="ball-a-row">
+          <span class="label" id="ball-a-label"></span>
+          <div class="counter">
+            <button type="button" id="ball-a-minus" aria-label="減少">−</button>
+            <span class="val" id="ball-a-val">0</span>
+            <button type="button" id="ball-a-plus" aria-label="增加">＋</button>
+          </div>
+        </div>
+        <div class="ball-row" id="ball-b-row">
+          <span class="label" id="ball-b-label"></span>
+          <div class="counter">
+            <button type="button" id="ball-b-minus" aria-label="減少">−</button>
+            <span class="val" id="ball-b-val">0</span>
+            <button type="button" id="ball-b-plus" aria-label="增加">＋</button>
+          </div>
+        </div>
+        <div class="vol-check" id="vol-check"></div>
+        <div class="follow-btns">
+          <button type="button" id="follow-hint">顯示提示</button>
+          <button type="button" id="follow-answer" class="primary">顯示答案</button>
+          <button type="button" id="follow-reset">重設</button>
+        </div>
+        <div class="calc-panel" id="follow-calc" style="display:none">
+          <div class="calc-body" id="follow-calc-body"></div>
+          <div class="eq" id="follow-calc-eq"></div>
+        </div>
+      </div>
+
+      <p class="hint">建議順序 ①→②→③→④，亦可自由跳轉 · 拖曳旋轉 · 雙指／滾輪縮放</p>
+    </div>
+  </div>
+
+  <div id="teacher-panel" role="dialog" aria-modal="true" aria-labelledby="teacher-title" hidden>
+    <div id="teacher-sheet">
+      <h2 id="teacher-title">教師備註</h2>
+      <p style="margin:0 0 8px;color:#5a6a7a;">香港小學數學 · 排水法（二）· Q6–Q8 與跟進練習簡版 · 教師預覽示範</p>
+
+      <h3>建議課堂順序</h3>
+      <p>① Q6（求上升高度）→ ② Q7（求新水位）→ ③ Q8（取出後水位）→ ④ 跟進練習簡版。主畫面可自由跳題，不強制鎖步。</p>
+
+      <h3>Q6 答案</h3>
+      <p>水位上升 = 896 ÷ 40 ÷ 28 = <strong>0.8 厘米</strong>。放入石橋後水位由 20 cm 升至 20.8 cm；綠色帶標示上升部分。</p>
+      <p><em>提示：</em>先讓學生寫「上升體積＝底面積×上升高度」，再反推上升高度＝物體體積÷長÷闊。</p>
+
+      <h3>Q7 答案</h3>
+      <p>新水位 = 11 + 900 ÷ 25 ÷ 18 = 11 + 2 = <strong>13 厘米</strong>。</p>
+      <p><em>提示：</em>對比 Q6：Q6 只問「升了多少」，Q7 問「現在是多少」＝初水位＋上升。</p>
+
+      <h3>Q8 答案</h3>
+      <p>取出後水位 = 6 − 200 ÷ 10 ÷ 10 = 6 − 2 = <strong>4 厘米</strong>。示範由「物體已在水中」開始，按「取出」觀察下降帶。</p>
+      <p><em>提示：</em>強調「取出」與「放入」方向相反：下降高度＝物體體積÷底邊÷底邊。</p>
+
+      <h3>跟進1（放入混合球）</h3>
+      <p>底面積 × 上升高度 = 18 × 3 = <strong>54 立方厘米</strong>（總體積）。</p>
+      <p>一組解：4 紅（6 cm³）+ 6 綠（5 cm³）= 24 + 30 = 54。學生可用計數器試其他組合；教師可用「顯示答案」預覽。</p>
+
+      <h3>跟進2（取出混合球）</h3>
+      <p>底面積 × 下降高度 = 20 × 4 = <strong>80 立方厘米</strong>（取出物體總體積）。</p>
+      <p>一組解：8 白（7 cm³）+ 3 黑（8 cm³）= 56 + 24 = 80。</p>
+      <div class="note-warn">
+        <strong>關於原稿數字：</strong>筆記跟進第2題原稿曾出現 18×3=54 與題目（底面積20、下降4）不符；本示範按題意改為 20×4=80，組合 8白+3黑。
+      </div>
+
+      <h3>操作與技術</h3>
+      <ul>
+        <li>計算過程預設隱藏，可按「顯示計算過程」揭示，方便教師先問再講。</li>
+        <li>Three.js 已本地 vendored，離線可用；建議 <code>python3 -m http.server</code> 開啟以支援 ES modules。</li>
+        <li>iPad：大按鈕、觸控旋轉縮放；主畫面不強制顯示答案。</li>
+      </ul>
+      <button type="button" id="close-teacher">關閉</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from './vendor/OrbitControls.js';
+
+    // ——— Question definitions ———
+    const QUESTIONS = {
+      q6: {
+        id: 'q6',
+        mode: 'place',
+        L: 40, W: 28, H: 34,
+        water0: 20,
+        objVol: 896,
+        objName: '石橋',
+        rise: 0.8, // 896 ÷ 40 ÷ 28
+        stem: '長方體水缸：長 40 cm、闊 28 cm、高 34 cm。初水位 20 cm。放入體積 896 cm³ 的石橋（完全浸沒，水未溢出）。',
+        ask: '問：水位上升了多少 cm？',
+        calcBody: '水位上升高度 ＝ 物體體積 ÷ 長 ÷ 闊',
+        calcEq: '896 ÷ 40 ÷ 28 = 0.8 厘米',
+        bandLabel: (r) => `水位上升：<strong>${fmt(r)}</strong> 厘米`,
+        chipAsk: '求：水位上升了多少？',
+      },
+      q7: {
+        id: 'q7',
+        mode: 'place',
+        L: 25, W: 18, H: 22,
+        water0: 11,
+        objVol: 900,
+        objName: '石屋',
+        rise: 2, // 900 ÷ 25 ÷ 18
+        stem: '水缸：長 25 cm、闊 18 cm、高 22 cm。初水位 11 cm。放入體積 900 cm³ 的石屋（完全浸沒，水未溢出）。',
+        ask: '問：現在水位是多少 cm？',
+        calcBody: '新水位 ＝ 初水位 ＋ 物體體積 ÷ 長 ÷ 闊',
+        calcEq: '11 + 900 ÷ 25 ÷ 18 = 11 + 2 = 13 厘米',
+        bandLabel: (r) => `水位上升：<strong>${fmt(r)}</strong> 厘米 → 新水位 13 cm`,
+        chipAsk: '求：現在水位是多少？',
+        finalLevel: 13,
+      },
+      q8: {
+        id: 'q8',
+        mode: 'remove',
+        L: 10, W: 10, H: 10,
+        water0: 6, // with object in
+        waterAfter: 4,
+        objVol: 200,
+        objName: '陶瓷錦鯉',
+        drop: 2, // 200 ÷ 10 ÷ 10
+        stem: '正方體水缸：邊長 10 cm。內有體積 200 cm³ 的陶瓷錦鯉，現時水位 6 cm（物體完全浸沒）。',
+        ask: '問：取出後水位是多少 cm？',
+        calcBody: '取出後水位 ＝ 現水位 − 物體體積 ÷ 邊長 ÷ 邊長',
+        calcEq: '6 − 200 ÷ 10 ÷ 10 = 6 − 2 = 4 厘米',
+        bandLabel: (d) => `水位下降：<strong>${fmt(d)}</strong> 厘米 → 新水位 4 cm`,
+        chipAsk: '求：取出後水位是多少？',
+      },
+    };
+
+    const FOLLOW = {
+      1: {
+        title: '跟進1 · 放入混合球',
+        stem: '底面積 18 cm²，水位由 10 cm 升至 13 cm（上升 3 cm）。紅球每顆 6 cm³、綠球每顆 5 cm³，全部浸沒。試找出紅、綠球個數，使總體積等於上升體積。',
+        base: 18, delta: 3, target: 54,
+        concept: '底面積 × 上升高度 = 總體積 → 18 × 3 = 54 cm³',
+        a: { name: '紅球', vol: 6, color: '#e85d5d', answer: 4 },
+        b: { name: '綠球', vol: 5, color: '#3cb371', answer: 6 },
+        answerText: '4 × 6 + 6 × 5 = 24 + 30 = 54',
+        hint: '先算總體積 18×3=54。可先試紅球個數，再看剩餘能否被 5 整除。',
+        water0: 10, water1: 13, L: 6, W: 3, H: 16, // visual approx base 18
+      },
+      2: {
+        title: '跟進2 · 取出混合球',
+        stem: '底面積 20 cm²，取出部分球後水位下降 4 cm。白球每顆 7 cm³、黑球每顆 8 cm³。試找出取出的白、黑球個數。',
+        base: 20, delta: 4, target: 80,
+        concept: '底面積 × 下降高度 = 取出物體總體積 → 20 × 4 = 80 cm³',
+        a: { name: '白球', vol: 7, color: '#f5f5f0', answer: 8 },
+        b: { name: '黑球', vol: 8, color: '#3a3a3a', answer: 3 },
+        answerText: '8 × 7 + 3 × 8 = 56 + 24 = 80',
+        hint: '先算取出總體積 20×4=80。可試白球個數，使剩餘可被 8 整除。',
+        water0: 12, water1: 8, L: 5, W: 4, H: 16, // visual approx base 20
+      },
+    };
+
+    function fmt(n) {
+      const s = Number(n).toFixed(2).replace(/\.?0+$/, '');
+      return s === '' ? '0' : s;
+    }
+
+    // ——— DOM ———
+    const host = document.getElementById('canvas-host');
+    const actionBtn = document.getElementById('action-btn');
+    const calcToggle = document.getElementById('calc-toggle');
+    const calcPanel = document.getElementById('calc-panel');
+    const calcBody = document.getElementById('calc-body');
+    const calcEq = document.getElementById('calc-eq');
+    const levelText = document.getElementById('level-text');
+    const chipDims = document.getElementById('chip-dims');
+    const chipBand = document.getElementById('chip-band');
+    const chipAsk = document.getElementById('chip-ask');
+    const stemText = document.getElementById('stem-text');
+    const askText = document.getElementById('ask-text');
+    const mainActions = document.getElementById('main-actions');
+    const followUI = document.getElementById('follow-ui');
+    const teacherToggle = document.getElementById('teacher-toggle');
+    const teacherPanel = document.getElementById('teacher-panel');
+    const closeTeacher = document.getElementById('close-teacher');
+
+    let currentQ = 'q6';
+    let followIdx = 1;
+    let showCalc = false;
+    let acted = false; // placed or removed for current Q
+    let animating = false;
+    let waterLevel = 20;
+    let targetLevel = 20;
+    let riseOpacity = 0;
+    let targetRiseOpacity = 0;
+    let objY = 40;
+    let targetObjY = 40;
+    let bandMode = 'rise'; // 'rise' | 'drop'
+    let countA = 0, countB = 0;
+
+    // ——— Three.js setup ———
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setClearColor(0x000000, 0);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    host.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 500);
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.maxPolarAngle = Math.PI * 0.48;
+
+    scene.add(new THREE.AmbientLight(0xfff6ea, 0.85));
+    const key = new THREE.DirectionalLight(0xffffff, 0.9);
+    key.position.set(8, 16, 10);
+    scene.add(key);
+    const fill = new THREE.DirectionalLight(0xb8d4ff, 0.35);
+    fill.position.set(-10, 6, -8);
+    scene.add(fill);
+
+    const floor = new THREE.Mesh(
+      new THREE.CircleGeometry(40, 48),
+      new THREE.MeshBasicMaterial({ color: 0xd9cfc0, transparent: true, opacity: 0.45 })
+    );
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.y = -0.02;
+    scene.add(floor);
+
+    const tankGroup = new THREE.Group();
+    scene.add(tankGroup);
+
+    const WALL = 0.3;
+    let waterMesh, surface, bandMesh, bandEdges, objectMesh;
+    let labelSprites = [];
+    let innerL = 10, innerW = 8, tankHVis = 12;
+    let bandLow = 0, bandHigh = 0;
+    let bandMat, bandEdgeMat;
+
+    const SHARED_MATS = new Set();
+    const wallMat = new THREE.MeshStandardMaterial({
+      color: 0xb8e0f5, transparent: true, opacity: 0.28,
+      roughness: 0.25, metalness: 0.05, side: THREE.DoubleSide, depthWrite: false,
+    });
+    const edgeMat = new THREE.LineBasicMaterial({ color: 0x7aa8c4, transparent: true, opacity: 0.7 });
+    const waterMat = new THREE.MeshStandardMaterial({
+      color: 0x5eb8e8, transparent: true, opacity: 0.55,
+      roughness: 0.2, metalness: 0.05, depthWrite: false,
+    });
+    const surfaceMat = new THREE.MeshStandardMaterial({
+      color: 0x9fd9f5, transparent: true, opacity: 0.5,
+      roughness: 0.1, metalness: 0.1, side: THREE.DoubleSide, depthWrite: false,
+    });
+    SHARED_MATS.add(wallMat);
+    SHARED_MATS.add(edgeMat);
+    SHARED_MATS.add(waterMat);
+    SHARED_MATS.add(surfaceMat);
+
+    function clearTank() {
+      while (tankGroup.children.length) {
+        const c = tankGroup.children[0];
+        tankGroup.remove(c);
+        c.traverse(obj => {
+          if (obj.geometry) obj.geometry.dispose();
+          const mats = obj.material ? (Array.isArray(obj.material) ? obj.material : [obj.material]) : [];
+          for (const m of mats) {
+            if (!m || SHARED_MATS.has(m)) continue;
+            if (m.map) m.map.dispose();
+            m.dispose?.();
+          }
+        });
+      }
+      waterMesh = surface = bandMesh = bandEdges = objectMesh = null;
+      labelSprites = [];
+    }
+
+    function addBox(w, h, d, x, y, z, mat) {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+      m.position.set(x, y, z);
+      tankGroup.add(m);
+      return m;
+    }
+
+    function roundRect(ctx, x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
+    }
+
+    function makeLabel(text, color = '#2c3e50', scaleX = 4.2) {
+      const c = document.createElement('canvas');
+      c.width = 512; c.height = 128;
+      const ctx = c.getContext('2d');
+      ctx.clearRect(0, 0, c.width, c.height);
+      ctx.font = 'bold 48px "PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      roundRect(ctx, 16, 24, 480, 80, 20);
+      ctx.fill();
+      ctx.strokeStyle = '#d4cbbd';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      ctx.fillStyle = color;
+      ctx.fillText(text, 256, 68);
+      const tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+      const spr = new THREE.Sprite(mat);
+      spr.scale.set(scaleX, scaleX * 0.25, 1);
+      return spr;
+    }
+
+    function createObject(kind, scale) {
+      let mesh;
+      if (kind === '石橋') {
+        const g = new THREE.Group();
+        const stone = new THREE.MeshStandardMaterial({ color: 0x8a7a68, roughness: 0.9, flatShading: true });
+        const deck = new THREE.Mesh(new THREE.BoxGeometry(2.8 * scale, 0.45 * scale, 1.1 * scale), stone);
+        deck.position.y = 0.7 * scale;
+        g.add(deck);
+        const p1 = new THREE.Mesh(new THREE.BoxGeometry(0.5 * scale, 0.9 * scale, 1.0 * scale), stone);
+        p1.position.set(-0.9 * scale, 0.35 * scale, 0);
+        const p2 = p1.clone(); p2.position.x = 0.9 * scale;
+        g.add(p1, p2);
+        const arch = new THREE.Mesh(
+          new THREE.TorusGeometry(0.45 * scale, 0.18 * scale, 8, 16, Math.PI),
+          stone
+        );
+        arch.rotation.z = Math.PI;
+        arch.position.y = 0.35 * scale;
+        g.add(arch);
+        mesh = g;
+      } else if (kind === '石屋') {
+        const g = new THREE.Group();
+        const stone = new THREE.MeshStandardMaterial({ color: 0x9a8b78, roughness: 0.88, flatShading: true });
+        const roofM = new THREE.MeshStandardMaterial({ color: 0xb07050, roughness: 0.85, flatShading: true });
+        const body = new THREE.Mesh(new THREE.BoxGeometry(1.6 * scale, 1.3 * scale, 1.4 * scale), stone);
+        body.position.y = 0.65 * scale;
+        g.add(body);
+        const roof = new THREE.Mesh(new THREE.ConeGeometry(1.35 * scale, 0.9 * scale, 4), roofM);
+        roof.position.y = 1.7 * scale;
+        roof.rotation.y = Math.PI / 4;
+        g.add(roof);
+        mesh = g;
+      } else if (kind === '陶瓷錦鯉') {
+        const g = new THREE.Group();
+        const bodyM = new THREE.MeshStandardMaterial({ color: 0xe85a3c, roughness: 0.45, metalness: 0.1 });
+        const body = new THREE.Mesh(new THREE.SphereGeometry(0.55 * scale, 16, 12), bodyM);
+        body.scale.set(1.8, 0.85, 1.0);
+        g.add(body);
+        const tail = new THREE.Mesh(new THREE.ConeGeometry(0.35 * scale, 0.7 * scale, 8), bodyM);
+        tail.rotation.z = Math.PI / 2;
+        tail.position.x = -1.1 * scale;
+        g.add(tail);
+        mesh = g;
+      } else {
+        // generic rock
+        const geo = new THREE.IcosahedronGeometry(0.9 * scale, 1);
+        const pos = geo.attributes.position;
+        const v = new THREE.Vector3();
+        for (let i = 0; i < pos.count; i++) {
+          v.fromBufferAttribute(pos, i);
+          const n = v.clone().normalize();
+          const noise = 0.12 * Math.sin(v.x * 4 + 1.7) + 0.1 * Math.cos(v.y * 5);
+          v.addScaledVector(n, noise);
+          pos.setXYZ(i, v.x, v.y, v.z);
+        }
+        geo.computeVertexNormals();
+        mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
+          color: 0x8a7a68, roughness: 0.92, flatShading: true,
+        }));
+      }
+      return mesh;
+    }
+
+    function createBallPile(countA, countB, colorA, colorB, scale) {
+      const g = new THREE.Group();
+      const r = 0.35 * scale;
+      let n = 0;
+      function addBall(col) {
+        const m = new THREE.Mesh(
+          new THREE.SphereGeometry(r, 12, 10),
+          new THREE.MeshStandardMaterial({ color: col, roughness: 0.4 })
+        );
+        const row = Math.floor(n / 4);
+        const colIdx = n % 4;
+        m.position.set((colIdx - 1.5) * r * 2.1, r + row * r * 1.8, ((n % 2) - 0.5) * r * 1.5);
+        g.add(m);
+        n++;
+      }
+      for (let i = 0; i < countA; i++) addBall(colorA);
+      for (let i = 0; i < countB; i++) addBall(colorB);
+      return g;
+    }
+
+    function buildTank(L, W, H, opts = {}) {
+      clearTank();
+      innerL = L;
+      innerW = W;
+      tankHVis = H;
+      const outerL = L + WALL * 2;
+      const outerW = W + WALL * 2;
+
+      addBox(outerL, WALL, outerW, 0, WALL / 2, 0, new THREE.MeshStandardMaterial({
+        color: 0xc5dce8, transparent: true, opacity: 0.55, roughness: 0.4,
+      }));
+
+      const wh = H;
+      const wy = WALL + wh / 2;
+      addBox(WALL, wh, outerW, -(L / 2 + WALL / 2), wy, 0, wallMat);
+      addBox(WALL, wh, outerW, +(L / 2 + WALL / 2), wy, 0, wallMat);
+      addBox(outerL, wh, WALL, 0, wy, -(W / 2 + WALL / 2), wallMat);
+      addBox(outerL, wh, WALL, 0, wy, +(W / 2 + WALL / 2), wallMat);
+
+      const outline = new THREE.LineSegments(
+        new THREE.EdgesGeometry(new THREE.BoxGeometry(outerL, wh + WALL, outerW)),
+        edgeMat
+      );
+      outline.position.y = (wh + WALL) / 2;
+      tankGroup.add(outline);
+
+      waterMesh = new THREE.Mesh(new THREE.BoxGeometry(L * 0.98, 1, W * 0.98), waterMat);
+      waterMesh.position.set(0, WALL + 0.5, 0);
+      tankGroup.add(waterMesh);
+
+      surface = new THREE.Mesh(new THREE.PlaneGeometry(L * 0.98, W * 0.98), surfaceMat);
+      surface.rotation.x = -Math.PI / 2;
+      surface.position.set(0, WALL + 1, 0);
+      tankGroup.add(surface);
+
+      bandMat = new THREE.MeshStandardMaterial({
+        color: 0x3ecf6a, transparent: true, opacity: 0,
+        roughness: 0.35, metalness: 0, depthWrite: false, side: THREE.DoubleSide,
+      });
+      bandMesh = new THREE.Mesh(new THREE.BoxGeometry(L * 0.96, 1, W * 0.96), bandMat);
+      bandMesh.visible = false;
+      tankGroup.add(bandMesh);
+
+      bandEdgeMat = new THREE.LineBasicMaterial({ color: 0x1b8f45, transparent: true, opacity: 0 });
+      bandEdges = new THREE.LineSegments(
+        new THREE.EdgesGeometry(new THREE.BoxGeometry(L * 0.96, 1, W * 0.96)),
+        bandEdgeMat
+      );
+      bandEdges.visible = false;
+      tankGroup.add(bandEdges);
+
+      const s = Math.max(L, W) * 0.08 + 1.2;
+      const lblL = makeLabel(`長 ${L} cm`, '#2c3e50', Math.max(4, L * 0.22));
+      lblL.position.set(0, 0.8, W / 2 + s * 0.5);
+      tankGroup.add(lblL);
+      labelSprites.push(lblL);
+
+      const lblW = makeLabel(`闊 ${W} cm`, '#2c3e50', Math.max(3.5, W * 0.28));
+      lblW.position.set(L / 2 + s * 0.55, 0.8, 0);
+      tankGroup.add(lblW);
+      labelSprites.push(lblW);
+
+      if (opts.objectKind) {
+        const objScale = Math.min(L, W, H) * 0.12 + 0.8;
+        objectMesh = createObject(opts.objectKind, objScale);
+        tankGroup.add(objectMesh);
+      }
+
+      // Camera fit
+      const maxD = Math.max(L, W, H);
+      const dist = maxD * 1.35 + 8;
+      camera.position.set(dist * 0.75, dist * 0.55, dist * 0.75);
+      controls.minDistance = maxD * 0.6;
+      controls.maxDistance = maxD * 3.5;
+      controls.target.set(0, H * 0.35, 0);
+      controls.update();
+      floor.scale.setScalar(Math.max(1, maxD / 16));
+    }
+
+    function setBand(low, high, mode) {
+      bandLow = low;
+      bandHigh = high;
+      bandMode = mode;
+      const h = Math.max(0.05, high - low);
+      const mid = WALL + (low + high) / 2;
+      bandMesh.scale.y = h;
+      bandMesh.position.set(0, mid, 0);
+      bandEdges.scale.y = h;
+      bandEdges.position.set(0, mid, 0);
+      if (mode === 'drop') {
+        bandMat.color.setHex(0xe87a5a);
+        bandEdgeMat.color.setHex(0xc04530);
+      } else {
+        bandMat.color.setHex(0x3ecf6a);
+        bandEdgeMat.color.setHex(0x1b8f45);
+      }
+    }
+
+    function setWaterVisual(level) {
+      const h = Math.max(0.05, level);
+      waterMesh.scale.y = h;
+      waterMesh.position.y = WALL + h / 2;
+      surface.position.y = WALL + h;
+    }
+
+    function setObjectY(y) {
+      if (!objectMesh) return;
+      objectMesh.position.y = y;
+    }
+
+    function objectRestY() {
+      return WALL + Math.min(innerL, innerW) * 0.08 + 0.9;
+    }
+
+    function objectOutY() {
+      return tankHVis + WALL + Math.max(innerL, innerW) * 0.4 + 4;
+    }
+
+    // ——— UI helpers ———
+    function updateCalcVisibility() {
+      // Toggle works anytime so teacher can reveal formula before/after demo
+      if (showCalc) {
+        calcPanel.classList.remove('hidden-calc');
+        calcToggle.classList.add('on');
+        calcToggle.setAttribute('aria-pressed', 'true');
+        calcToggle.textContent = '隱藏計算過程';
+      } else {
+        calcPanel.classList.add('hidden-calc');
+        calcToggle.classList.remove('on');
+        calcToggle.setAttribute('aria-pressed', 'false');
+        calcToggle.textContent = '顯示計算過程';
+      }
+    }
+
+    function loadQuestion(id) {
+      currentQ = id;
+      showCalc = false;
+      acted = false;
+      animating = false;
+      riseOpacity = 0;
+      targetRiseOpacity = 0;
+
+      document.querySelectorAll('.q-btn').forEach(b => {
+        const on = b.dataset.q === id;
+        b.classList.toggle('active', on);
+        b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+
+      if (id === 'follow') {
+        mainActions.classList.add('hide');
+        // mainActions uses display:contents — toggle via style on wrapper
+        document.getElementById('main-actions').style.display = 'none';
+        followUI.classList.add('show');
+        loadFollow(followIdx);
+        return;
+      }
+
+      document.getElementById('main-actions').style.display = 'contents';
+      followUI.classList.remove('show');
+
+      const q = QUESTIONS[id];
+      stemText.textContent = q.stem;
+      askText.textContent = q.ask;
+      chipAsk.textContent = q.chipAsk;
+      chipDims.innerHTML = `水缸：<strong>長 ${q.L}</strong> × <strong>闊 ${q.W}</strong> × <strong>高 ${q.H}</strong> cm`;
+      calcBody.textContent = q.calcBody;
+      calcEq.textContent = q.calcEq;
+      chipBand.hidden = true;
+      chipBand.classList.remove('drop');
+
+      buildTank(q.L, q.W, q.H, { objectKind: q.objName });
+
+      if (q.mode === 'place') {
+        waterLevel = targetLevel = q.water0;
+        objY = targetObjY = objectOutY();
+        setObjectY(objY);
+        actionBtn.textContent = `放入${q.objName}`;
+        actionBtn.className = 'btn-main';
+        actionBtn.disabled = false;
+        setBand(q.water0, q.water0 + q.rise, 'rise');
+      } else {
+        // remove: start with object in, water at water0
+        waterLevel = targetLevel = q.water0;
+        objY = targetObjY = objectRestY();
+        setObjectY(objY);
+        actionBtn.textContent = `取出${q.objName}`;
+        actionBtn.className = 'btn-main out';
+        actionBtn.disabled = false;
+        setBand(q.waterAfter, q.water0, 'drop');
+      }
+      setWaterVisual(waterLevel);
+      levelText.textContent = fmt(waterLevel);
+      updateCalcVisibility();
+    }
+
+    function doAction() {
+      if (animating || currentQ === 'follow') return;
+      const q = QUESTIONS[currentQ];
+      if (acted) {
+        // reset to initial state for re-demo
+        acted = false;
+        showCalc = false;
+        if (q.mode === 'place') {
+          targetLevel = q.water0;
+          targetObjY = objectOutY();
+          targetRiseOpacity = 0;
+          actionBtn.textContent = `放入${q.objName}`;
+          actionBtn.className = 'btn-main';
+          chipBand.hidden = true;
+        } else {
+          targetLevel = q.water0;
+          targetObjY = objectRestY();
+          targetRiseOpacity = 0;
+          actionBtn.textContent = `取出${q.objName}`;
+          actionBtn.className = 'btn-main out';
+          chipBand.hidden = true;
+        }
+        updateCalcVisibility();
+        animating = true;
+        return;
+      }
+
+      acted = true;
+      if (q.mode === 'place') {
+        const newLevel = q.finalLevel != null ? q.finalLevel : q.water0 + q.rise;
+        targetLevel = newLevel;
+        targetObjY = objectRestY();
+        targetRiseOpacity = 0.5;
+        setBand(q.water0, newLevel, 'rise');
+        chipBand.classList.remove('drop');
+        chipBand.hidden = false;
+        chipBand.innerHTML = q.bandLabel(q.rise);
+        actionBtn.textContent = `取出${q.objName}（重設）`;
+        actionBtn.className = 'btn-main in';
+      } else {
+        targetLevel = q.waterAfter;
+        targetObjY = objectOutY();
+        targetRiseOpacity = 0.5;
+        setBand(q.waterAfter, q.water0, 'drop');
+        chipBand.classList.add('drop');
+        chipBand.hidden = false;
+        chipBand.innerHTML = q.bandLabel(q.drop);
+        actionBtn.textContent = `放回${q.objName}（重設）`;
+        actionBtn.className = 'btn-main';
+      }
+      // Prefer toggle: don't auto-force calc, but allow easy reveal
+      updateCalcVisibility();
+      animating = true;
+    }
+
+    // ——— Follow-up ———
+    function loadFollow(idx) {
+      followIdx = idx;
+      countA = 0;
+      countB = 0;
+      document.querySelectorAll('.f-tab').forEach(t => {
+        t.classList.toggle('active', Number(t.dataset.f) === idx);
+      });
+      const f = FOLLOW[idx];
+      stemText.textContent = f.stem;
+      askText.textContent = f.concept;
+      chipAsk.textContent = f.title;
+      chipDims.innerHTML = `底面積：<strong>${f.base}</strong> cm² · Δh = <strong>${f.delta}</strong> cm`;
+      chipBand.hidden = true;
+
+      document.getElementById('ball-a-label').innerHTML =
+        `<span class="ball-swatch" style="background:${f.a.color}"></span>${f.a.name}（${f.a.vol} cm³）`;
+      document.getElementById('ball-b-label').innerHTML =
+        `<span class="ball-swatch" style="background:${f.b.color}"></span>${f.b.name}（${f.b.vol} cm³）`;
+      document.getElementById('follow-calc').style.display = 'none';
+      document.getElementById('follow-stem').textContent = '';
+
+      // Build visual tank approximating base area
+      buildTank(f.L, f.W, f.H, {});
+      // Add ball pile as object
+      if (objectMesh) { tankGroup.remove(objectMesh); }
+      objectMesh = createBallPile(3, 3, f.a.color, f.b.color, 1.2);
+      objectMesh.position.set(0, objectRestY(), 0);
+      tankGroup.add(objectMesh);
+
+      if (idx === 1) {
+        waterLevel = targetLevel = f.water0;
+        setBand(f.water0, f.water1, 'rise');
+      } else {
+        waterLevel = targetLevel = f.water0;
+        setBand(f.water1, f.water0, 'drop');
+      }
+      setWaterVisual(waterLevel);
+      levelText.textContent = fmt(waterLevel);
+      updateFollowCheck();
+    }
+
+    function updateFollowCheck() {
+      const f = FOLLOW[followIdx];
+      document.getElementById('ball-a-val').textContent = countA;
+      document.getElementById('ball-b-val').textContent = countB;
+      const vol = countA * f.a.vol + countB * f.b.vol;
+      const el = document.getElementById('vol-check');
+      el.textContent = `目前組合體積：${countA}×${f.a.vol} + ${countB}×${f.b.vol} = ${vol} cm³　（目標 ${f.target} cm³）`;
+      el.classList.remove('ok', 'bad');
+      if (countA + countB === 0) {
+        /* neutral */
+      } else if (vol === f.target) {
+        el.classList.add('ok');
+        el.textContent += ' ✓ 正確！';
+        // animate water
+        if (followIdx === 1) {
+          targetLevel = f.water1;
+          targetRiseOpacity = 0.5;
+          chipBand.classList.remove('drop');
+          chipBand.hidden = false;
+          chipBand.innerHTML = `水位上升：<strong>${f.delta}</strong> 厘米`;
+        } else {
+          targetLevel = f.water1;
+          targetRiseOpacity = 0.5;
+          chipBand.classList.add('drop');
+          chipBand.hidden = false;
+          chipBand.innerHTML = `水位下降：<strong>${f.delta}</strong> 厘米`;
+        }
+        animating = true;
+        // refresh ball pile
+        refreshBalls();
+      } else {
+        el.classList.add('bad');
+        targetRiseOpacity = 0;
+        chipBand.hidden = true;
+        if (followIdx === 1) targetLevel = f.water0;
+        else targetLevel = f.water0;
+        refreshBalls();
+      }
+    }
+
+    function refreshBalls() {
+      const f = FOLLOW[followIdx];
+      if (objectMesh) {
+        tankGroup.remove(objectMesh);
+        objectMesh.traverse?.(c => {
+          if (c.geometry) c.geometry.dispose();
+          if (c.material) c.material.dispose?.();
+        });
+      }
+      const nA = Math.max(countA, 0);
+      const nB = Math.max(countB, 0);
+      if (nA + nB === 0) {
+        objectMesh = createBallPile(2, 2, f.a.color, f.b.color, 1.0);
+        objectMesh.position.set(0, objectOutY() * 0.7, 0);
+      } else {
+        objectMesh = createBallPile(nA, nB, f.a.color, f.b.color, 1.1);
+        objectMesh.position.set(0, objectRestY(), 0);
+      }
+      tankGroup.add(objectMesh);
+    }
+
+    function showFollowHint() {
+      const f = FOLLOW[followIdx];
+      const box = document.getElementById('follow-calc');
+      box.style.display = 'block';
+      document.getElementById('follow-calc-body').textContent = f.hint;
+      document.getElementById('follow-calc-eq').textContent = f.concept;
+    }
+
+    function showFollowAnswer() {
+      const f = FOLLOW[followIdx];
+      countA = f.a.answer;
+      countB = f.b.answer;
+      const box = document.getElementById('follow-calc');
+      box.style.display = 'block';
+      document.getElementById('follow-calc-body').textContent = f.concept;
+      document.getElementById('follow-calc-eq').textContent = f.answerText;
+      updateFollowCheck();
+    }
+
+    // ——— Events ———
+    document.querySelectorAll('.q-btn').forEach(b => {
+      b.addEventListener('click', () => loadQuestion(b.dataset.q));
+    });
+    actionBtn.addEventListener('click', doAction);
+    calcToggle.addEventListener('click', () => {
+      showCalc = !showCalc;
+      updateCalcVisibility();
+    });
+
+    document.querySelectorAll('.f-tab').forEach(t => {
+      t.addEventListener('click', () => loadFollow(Number(t.dataset.f)));
+    });
+    document.getElementById('ball-a-plus').addEventListener('click', () => { countA = Math.min(20, countA + 1); updateFollowCheck(); });
+    document.getElementById('ball-a-minus').addEventListener('click', () => { countA = Math.max(0, countA - 1); updateFollowCheck(); });
+    document.getElementById('ball-b-plus').addEventListener('click', () => { countB = Math.min(20, countB + 1); updateFollowCheck(); });
+    document.getElementById('ball-b-minus').addEventListener('click', () => { countB = Math.max(0, countB - 1); updateFollowCheck(); });
+    document.getElementById('follow-hint').addEventListener('click', showFollowHint);
+    document.getElementById('follow-answer').addEventListener('click', showFollowAnswer);
+    document.getElementById('follow-reset').addEventListener('click', () => {
+      countA = 0; countB = 0;
+      document.getElementById('follow-calc').style.display = 'none';
+      const f = FOLLOW[followIdx];
+      targetLevel = f.water0;
+      targetRiseOpacity = 0;
+      chipBand.hidden = true;
+      updateFollowCheck();
+    });
+
+    function openTeacher() {
+      teacherPanel.hidden = false;
+      teacherPanel.classList.add('open');
+      teacherToggle.setAttribute('aria-expanded', 'true');
+    }
+    function closeTeacherPanel() {
+      teacherPanel.classList.remove('open');
+      teacherPanel.hidden = true;
+      teacherToggle.setAttribute('aria-expanded', 'false');
+    }
+    teacherToggle.addEventListener('click', () => {
+      if (teacherPanel.classList.contains('open')) closeTeacherPanel();
+      else openTeacher();
+    });
+    closeTeacher.addEventListener('click', closeTeacherPanel);
+    teacherPanel.addEventListener('click', (e) => {
+      if (e.target === teacherPanel) closeTeacherPanel();
+    });
+
+    function resize() {
+      const w = host.clientWidth;
+      const h = host.clientHeight;
+      if (w < 1 || h < 1) return;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h, false);
+    }
+    window.addEventListener('resize', resize);
+
+    // ——— Animation ———
+    const clock = new THREE.Clock();
+    function lerp(a, b, t) { return a + (b - a) * t; }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = Math.min(clock.getDelta(), 0.05);
+      const k = 1 - Math.pow(0.001, dt);
+
+      waterLevel = lerp(waterLevel, targetLevel, k * 3.2);
+      objY = lerp(objY, targetObjY, k * 2.8);
+      riseOpacity = lerp(riseOpacity, targetRiseOpacity, k * 3.5);
+
+      if (waterMesh) setWaterVisual(waterLevel);
+      if (objectMesh && currentQ !== 'follow') setObjectY(objY);
+      else if (objectMesh && currentQ === 'follow') {
+        // balls stay; optional slight bob
+      }
+
+      if (bandMesh) {
+        const showBand = riseOpacity > 0.02;
+        bandMesh.visible = showBand;
+        bandEdges.visible = showBand;
+        bandMat.opacity = riseOpacity;
+        bandEdgeMat.opacity = Math.min(1, riseOpacity * 1.6);
+      }
+
+      levelText.textContent = fmt(waterLevel);
+
+      if (Math.abs(waterLevel - targetLevel) < 0.01 &&
+          Math.abs(objY - targetObjY) < 0.05 &&
+          Math.abs(riseOpacity - targetRiseOpacity) < 0.01) {
+        waterLevel = targetLevel;
+        objY = targetObjY;
+        riseOpacity = targetRiseOpacity;
+        animating = false;
+      }
+
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    // Math sanity for console
+    window.__waterDemo = {
+      q6: { rise: 896 / 40 / 28, expect: 0.8 },
+      q7: { level: 11 + 900 / 25 / 18, expect: 13 },
+      q8: { level: 6 - 200 / 10 / 10, expect: 4 },
+      f1: { vol: 18 * 3, combo: 4 * 6 + 6 * 5, expect: 54 },
+      f2: { vol: 20 * 4, combo: 8 * 7 + 3 * 8, expect: 80 },
+      loadQuestion, doAction,
+    };
+
+    loadQuestion('q6');
+    resize();
+    animate();
+  </script>
+</body>
+</html>
